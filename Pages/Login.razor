@@ -1,0 +1,26 @@
+@page "/login"
+@attribute [AllowAnonymous]
+@inject MyCustomAuthenticationStateProvider _authenticationStateProvider
+@inject NavigationManager _navigationManager
+
+<div style="background-color: beige;">
+    <div MaxWidth="MaxWidth.Small" Style="height: 100vh;">
+        <div Style="position: relative; top: 50%; transform: translateY(-50%);" Class="pb-3">
+            <div>
+                <button class="btn btn-primary" @onclick="OnNormalLoginClicked">Login as normal user</button>
+                <button class="btn btn-primary" @onclick="OnAdminLoginClicked">Login as admin</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private void OnNormalLoginClicked() {
+        _authenticationStateProvider.FakedSignIn();
+        _navigationManager.NavigateTo("/");
+    }
+    private void OnAdminLoginClicked(MouseEventArgs obj) {
+        _authenticationStateProvider.FakedAdminSignIn();
+        _navigationManager.NavigateTo("/");
+    }
+}
