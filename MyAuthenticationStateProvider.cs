@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Components.Authorization;
 
-public class MyCustomAuthenticationStateProvider : AuthenticationStateProvider {
+public class MyAuthenticationStateProvider : AuthenticationStateProvider {
     public override async Task<AuthenticationState> GetAuthenticationStateAsync() {
         return await Task.FromResult(new AuthenticationState(AnonymousUser));
     }
