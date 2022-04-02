@@ -35,7 +35,7 @@ dotnet add package AspNetCore.Components.WebAssembly.Authentication
 - Override `GetAuthenticationStateAsync` and set default user to anonymous user with no claims.
 - Prepare faked signin and fake users.
 
-https://github.com/ferrywlto/blazor-wasm-client-auth/blob/master/MyCustomAuthentiationProvider.cs
+https://github.com/ferrywlto/blazor-wasm-client-auth/blob/3999744cc420f6c9036e25629479143293f9ca14/MyAuthenticationStateProvider.cs#L1-L43
 
 This class is where all the magic happens. We will return to this later in this article.
 
@@ -47,95 +47,61 @@ We need to add these lines to `Program.cs`:
 - builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<MyAuthenticationStateProvider>());
 - builder.Services.AddAuthorizationCore();
 
+https://github.com/ferrywlto/blazor-wasm-client-auth/blob/3999744cc420f6c9036e25629479143293f9ca14/Program.cs#L12-L14
+    
 Caution on how we instantiate an `MyAuthenticationStateProvider` object and provide it to service container as `AuthenticationStateProvider`.
 Otherwise an default `AuthenticationStateProvider` object will be used by Blazor instead of our implementation.
 
 ### 4. Setup _Imports.razor
-```c#
-@using Microsoft.AspNetCore.Components.Authorization
-@using Microsoft.AspNetCore.Authorization
-// Note that the fully qualified namespace is needed. Missing the project prefix will cause Components not able to run.
-@using blazor_wasm_client_auth.Pages
-@attribute [Authorize]
-```
+    
+https://github.com/ferrywlto/blazor-wasm-client-auth/blob/3999744cc420f6c9036e25629479143293f9ca14/_Imports.razor#L11-L15
 
+Note we placed `@attribute [Authorized]` here to make all pages requires authorization by default.
+    
 ### 5. Create login screen
-https://github.com/ferrywlto/blazor-wasm-client-auth/blob/4beb735aed47aeb328212c4efcdd97ef6890eaa5/Pages/Login.razor
 
-```c#
-@page "/login"
-@attribute [AllowAnonymous]
-```
+https://github.com/ferrywlto/blazor-wasm-client-auth/blob/3999744cc420f6c9036e25629479143293f9ca14/Pages/Login.razor#L1-L2
 
 Note that we need to place `[AllowAnonymous]` attribute here to allow user access without sign-in.
-
+    
 Then we have two buttons to simulate sign-in for normal user and admin user:
-```c#
-<button class="btn btn-primary" @onclick="OnNormalLoginClicked">Login as normal user</button>
-<button class="btn btn-primary" @onclick="OnAdminLoginClicked">Login as admin</button>
-
-private void OnNormalLoginClicked() {
-    _authenticationStateProvider.FakedSignIn();
-    _navigationManager.NavigateTo("/");
-}
-private void OnAdminLoginClicked(MouseEventArgs obj) {
-    _authenticationStateProvider.FakedAdminSignIn();
-    _navigationManager.NavigateTo("/");
-}
-```
+    
+https://github.com/ferrywlto/blazor-wasm-client-auth/blob/3999744cc420f6c9036e25629479143293f9ca14/Pages/Login.razor#L10-L11
+    
+https://github.com/ferrywlto/blazor-wasm-client-auth/blob/3999744cc420f6c9036e25629479143293f9ca14/Pages/Login.razor#L18-L25
+ 
 
 ### 6. Create RedirectToLogin component
 This is a dummy component to simply redirect user back to `/login` page.
 
-```c#
-@inject NavigationManager _navigationManager
+https://github.com/ferrywlto/blazor-wasm-client-auth/blob/3999744cc420f6c9036e25629479143293f9ca14/Pages/RedirectToLogin.razor#L4-L6
+    
 
-@code {
-    protected override void OnInitialized() {
-        _navigationManager.NavigateTo("/login");
-    }
-}
-```
 ### 7. Wrap MainLayout with `<AuthorizeView>`
 
-```c#
-<AuthorizeView>
-    <Authorized>
-// original content of MainLayout.razor
-    </Authorized>
-    <NotAuthorized>
-        @Body
-    </NotAuthorized>
-    <Authorizing>
-        @Body
-    </Authorizing>
-</AuthorizeView>
-```
+We wrap the original content in `MainLayout.razor` with `Authorized` tag: 
+
+https://github.com/ferrywlto/blazor-wasm-client-auth/blob/3999744cc420f6c9036e25629479143293f9ca14/Shared/MainLayout.razor#L4-L18
+
 
 ### 8. Include admin only content in `NavMenu`
 In `Shared/NavMenu.razor`, we will wrap the original link to `fetchData` screen with `<AuthorzieView>` tag and set the role required to see this link to "admin". We also add a button for user to logout.
 
-```c#
-<AuthorizeView Roles="admin">
-// original NavLink content to fetchData
-</AuthorizeView>
-<AuthorizeView>
-    <button class="btn btn-primary" @onclick="OnLogoutClicked">Logout</button>
-</AuthorizeView>
-```
+https://github.com/ferrywlto/blazor-wasm-client-auth/blob/3999744cc420f6c9036e25629479143293f9ca14/Shared/NavMenu.razor#L24-L34
+
+
 ### 9. Wrap routing with `<AuthorizeRouteView>`
 In `App.razor`, replace `<RouteView>` tag with `<AuthorizeRouteView>` tag. Then place our `RedirectToLogin` component inside `<NotAuthorized>` tag. So whenever a user access a route that exists but not authorized yet, Blazor will redirect them back to login screen.
 
+https://github.com/ferrywlto/blazor-wasm-client-auth/blob/3999744cc420f6c9036e25629479143293f9ca14/App.razor#L3-L10
+    
 ### 10. Config action for unmatched routes.
 In `App.razor`, make sure to fill the `NotFound` tag, this is what Blazor will do when a user try to access a route that doesn't exist. If user try to access `/something-not-exist`, which is not in `['/', '/counter', '/fetchdata', '/login']`, Blazor will just shows what you have put inside the `NotFound` tag. In our case, display "Page not found".
 
-```xml
-<NotFound>
-    <PageTitle>Not found</PageTitle>
-    <div>Page not found.</div>
-</NotFound>
-```
+https://github.com/ferrywlto/blazor-wasm-client-auth/blob/3999744cc420f6c9036e25629479143293f9ca14/App.razor#L13-L16
+    
 ### 11. Run and test yourself
+    
 Run and test our project by `dotnet run`.
 
 Open browser and go to the root of our Blazor app.
@@ -145,11 +111,8 @@ Notice that although you are requesting `/`, but you are now redirected to `/log
 ![login-page](/docs/login.png)
 
 This is because we have these code in `App.razor`：
-```c#
-<NotAuthorized>
-    <RedirectToLogin />
-</NotAuthorized>
-```
+
+https://github.com/ferrywlto/blazor-wasm-client-auth/blob/3999744cc420f6c9036e25629479143293f9ca14/App.razor#L4-L6
 
 The `/` route was defined in `Index.razor`, so it fall-into `<Found>` tag. And then since we are not logged in, therefore it further fall into `<NotAuthorized>` tag and finally we landed to `<RedirectToLogin />` component. When the component initialized, it calls `_navigationManager.NavigateTo("/login");`. That's why we see the login screen. 
 
@@ -162,11 +125,9 @@ Since no route matched, `App.razor` fall into `<NotFound>` tag and we will only 
 About `MyAuthenticationStateProvider`
 
 This class extends `AuthenticationStateProvider` and override a method:
-```c#
-public override async Task<AuthenticationState> GetAuthenticationStateAsync() {
-    return await Task.FromResult(new AuthenticationState(AnonymousUser));
-}
-```
+    
+https://github.com/ferrywlto/blazor-wasm-client-auth/blob/3999744cc420f6c9036e25629479143293f9ca14/MyAuthenticationStateProvider.cs#L5-L7
+
 This method will be called when user trying to access authorized page. Blazor will look for an AuthenticationState object to determine what claims the current user has and whether allow the user access specific pages.
 
 And the `AuthenticationState` object expect an `ClaimsPrincipal` object with claims like username, roles, etc.
@@ -174,9 +135,8 @@ And the `AuthenticationState` object expect an `ClaimsPrincipal` object with cla
 If an `ClaimsPrincipal` object has no claims, it is considered an anonymous user. 
 
 This is the trick we used in `MyAuthenticationStateProvider`:
-```c#
-private ClaimsPrincipal AnonymousUser => new(new ClaimsIdentity(Array.Empty<Claim>()));
-```
+
+https://github.com/ferrywlto/blazor-wasm-client-auth/blob/3999744cc420f6c9036e25629479143293f9ca14/MyAuthenticationStateProvider.cs#L9-L10
 
 Finally, return to our login screen and try the different login button.
 
@@ -191,9 +151,9 @@ Now click on the admin login button. This time we will see the fetch data link o
 ![nav-no-fetch](/docs/nav-has-fetch.png)
 
 This is because our faked ClaimPrinciple object has the `ClaimTypes.Role` set to "admin" and we have set the roles required to render the fetch data link to "admin":
-```c#
-<AuthorizeView Roles="admin">
-```
+
+https://github.com/ferrywlto/blazor-wasm-client-auth/blob/3999744cc420f6c9036e25629479143293f9ca14/Shared/NavMenu.razor#L24    
 
 ## Summary
+    
 Today we learned how to create a login page and redirect all unauthorized access back to that page in Blazor. It is completely on client-side for quick UI prototyping purpose, when building your web app you should combine server-side authentication and token management logic in your `MyAuthenticationStateProvider`. That's it for now and stay tuned for my next #EverythingInCSharp article. Have a nice day! 😀
